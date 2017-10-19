@@ -59,4 +59,34 @@ tbl(conn, 'flight')%>%
   summarise(count = n()) %>%
   collect()
 
+copy_to(conn,
+        flights,
+        name = 'flights_idx',
+        temporary = FALSE,
+        indexes = list("carrier"))
 
+tb_flights <- tbl(conn, "flights")
+
+tb_flights_idx <- tbl(conn, "flights_idx")
+
+if (!requireNamespace("microbenchmark")) install.packages("microbenchmark")
+library(microbenchmark)
+
+microbenchmark(tbl(conn, 'flights') %>%
+                 group_by(carrier) %>%
+                 summarise(count = n()) %>%
+                 collect(),
+               tbl(conn, 'flights_idx') %>%
+                 group_by(carrier) %>%
+                 summarise(count = n()) %>%
+                 collect(),
+               times = 10)
+
+#google cloud에 tran data upload 
+if (!requireNamespace("bigquery")) install.packages("bigrquery")
+library(bigrquery)
+
+project <- "kwangho-180612"
+sql <- "SELECT * FROM [kwangho-180612:class3_test.tran] LIMIT 1000"
+query_exec(sql, project = project)
+1
